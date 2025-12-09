@@ -991,6 +991,8 @@
   let isHost = false;
   let timerInterval = null;
   let lastBadgeIds = [];
+  let reflectionsInterval = null;
+
   // --- i18n ---
   let currentLang = "tr";
   let lastTimerPhaseKey = null;
@@ -2149,15 +2151,21 @@
   // --- Reflection ---
   async function loadReflections() {
     if (!currentRoom) return;
+  
+    // Katılımcıları tazeleyelim ki isimler "Anon" olmasın
+    await fetchParticipants(currentRoom.id);
+  
     const { data, error } = await supabase
       .from("focus_reflections")
       .select("*")
       .eq("room_id", currentRoom.id)
       .order("created_at", { ascending: false });
+  
     if (!error && data) {
       renderReflections(data);
     }
   }
+
 
   function renderReflections(rows) {
     reflectionListEl.innerHTML = "";
@@ -2355,7 +2363,15 @@
     fetchParticipants(room.id);
     fetchMyStats();
     loadReflections();
+  
+    // 🌀 Notları periyodik olarak yenile (örneğin her 7 saniye)
+    if (reflectionsInterval) clearInterval(reflectionsInterval);
+    reflectionsInterval = setInterval(() => {
+      loadReflections();
+    }, 7000);
   }
+
+
 
   async function bootstrapIdentity() {
     const name = await ensureDisplayName();
