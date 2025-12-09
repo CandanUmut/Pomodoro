@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ortak Pomodoro · Focus Circle</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #020617;
+      --panel: #020617;
+      --card: #0b1120;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.2);
+      --success: #22c55e;
+      --danger: #f97373;
+      --text: #e5e7eb;
+      --text-soft: #9ca3af;
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      background: radial-gradient(circle at top, #0b1120, #020617 55%);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      min-height: 100vh;
+      overflow-y: auto;
+    }
+
+    a { color: var(--accent); }
+
+    .app {
+      max-width: 960px;
+      width: 100%;
+      padding: 24px 16px 32px;
+    }
+
+    .card-shell {
+      position: relative;
+      background: radial-gradient(circle at top, #020617, #020617 40%), var(--card);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(75, 85, 99, 0.4);
+      backdrop-filter: blur(24px);
+      overflow: hidden;
+    }
+
+    .card-shell > * { position: relative; z-index: 1; }
+
+    .card-shell::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: var(--radius);
+      background:
+        radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.08), transparent 35%),
+        radial-gradient(circle at 80% 0%, rgba(34, 197, 94, 0.08), transparent 30%);
+      pointer-events: none;
+      opacity: 0.6;
+      animation: panelGlow 14s ease-in-out infinite;
+      z-index: 0;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    h1 span.icon { font-size: 2.2rem; }
+
+    .subtitle {
+      color: var(--text-soft);
+      margin-bottom: 12px;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .col {
+      flex: 1 1 260px;
+    }
+
+    .section-title {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-soft);
+      margin-bottom: 8px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-soft);
+      margin-bottom: 4px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid #1f2937;
+      background: #020617;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+      resize: vertical;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.4);
+    }
+
+    button {
+      border-radius: 999px;
+      border: none;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(to right, #22c55e, #38bdf8);
+      color: #0f172a;
+      box-shadow: 0 8px 25px rgba(56, 189, 248, 0.45);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    button.secondary {
+      background: transparent;
+      border: 1px solid #4b5563;
+      color: var(--text-soft);
+      box-shadow: none;
+    }
+
+    button[disabled] {
+      opacity: 0.5;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    button:active {
+      transform: translateY(1px) scale(0.99);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      border: 1px solid rgba(75, 85, 99, 0.7);
+      color: var(--text-soft);
+      background: rgba(15, 23, 42, 0.9);
+    }
+
+    .pill-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 8px rgba(34, 197, 94, 0.7);
+    }
+
+    .topic-pill {
+      margin-top: 6px;
+      font-size: 0.85rem;
+      border-color: rgba(56, 189, 248, 0.5);
+      background: rgba(56, 189, 248, 0.1);
+      color: var(--text);
+      max-width: 100%;
+      word-break: break-word;
+    }
+
+    .info-line {
+      font-size: 0.8rem;
+      color: var(--text-soft);
+      margin-top: 4px;
+    }
+
+    .timer-shell {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .timer-display {
+      font-size: 2.4rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), #020617);
+    }
+
+    .timer-phase-label {
+      font-size: 0.85rem;
+      color: var(--text-soft);
+    }
+
+    .timer-display.critical {
+      border-color: var(--danger);
+      box-shadow: 0 0 16px rgba(248, 113, 113, 0.4);
+    }
+
+    .room-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .players {
+      border-radius: 12px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      background: rgba(15, 23, 42, 0.95);
+      padding: 10px 12px;
+      max-height: 260px;
+      overflow-y: auto;
+      font-size: 0.9rem;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+
+    .player-row {
+      display: grid;
+      grid-template-columns: 1.4fr auto;
+      gap: 6px;
+      align-items: center;
+      padding: 6px 6px;
+      border-bottom: 1px dashed rgba(31, 41, 55, 0.7);
+      border-radius: 10px;
+    }
+
+    .player-row.you {
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      box-shadow: 0 6px 20px rgba(56, 189, 248, 0.08);
+    }
+
+    .player-row:last-child { border-bottom: none; }
+
+    .player-name {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+    }
+
+    .player-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #22c55e;
+    }
+
+    .player-tag {
+      font-size: 0.75rem;
+      padding: 3px 7px;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.8);
+      color: #e5e7eb;
+      margin-left: 4px;
+      background: rgba(255,255,255,0.03);
+      font-weight: 600;
+    }
+
+    .stats-card {
+      border-radius: 12px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      background: rgba(15, 23, 42, 0.95);
+      padding: 10px 12px;
+      font-size: 0.85rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .stat-pill {
+      border-radius: 12px;
+      border: 1px solid rgba(75, 85, 99, 0.8);
+      padding: 6px 8px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      color: var(--text-soft);
+    }
+
+    .stat-value {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .badge-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .badge-chip {
+      border-radius: 999px;
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      padding: 4px 9px;
+      font-size: 0.75rem;
+      background: rgba(56, 189, 248, 0.1);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .reflection-shell {
+      margin-top: 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(75, 85, 99, 0.7);
+      background: rgba(15, 23, 42, 0.95);
+      padding: 12px 14px;
+      font-size: 0.9rem;
+    }
+
+    .reflection-grid {
+      display: grid;
+      grid-template-columns: minmax(0,1.3fr) minmax(0,1.1fr);
+      gap: 12px;
+    }
+
+    @media (max-width: 800px) {
+      .reflection-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .reflection-list {
+      max-height: 230px;
+      overflow-y: auto;
+      padding-right: 4px;
+      font-size: 0.85rem;
+    }
+
+    .reflection-item {
+      border-radius: 10px;
+      border: 1px solid rgba(31,41,55,0.9);
+      background: rgba(15,23,42,0.95);
+      padding: 8px 9px;
+      margin-bottom: 6px;
+    }
+
+    .reflection-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 0.75rem;
+      color: var(--text-soft);
+      margin-bottom: 4px;
+    }
+
+    .reflection-text {
+      white-space: pre-wrap;
+    }
+
+    .error {
+      color: var(--danger);
+      font-size: 0.8rem;
+      margin-top: 6px;
+    }
+
+    .lang-switch {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.15);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+      z-index: 5;
+      pointer-events: auto;
+    }
+
+    .lang-btn {
+      font-size: 0.8rem;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(75, 85, 99, 0.8);
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text-soft);
+      cursor: pointer;
+      min-width: 54px;
+    }
+
+    .lang-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+    }
+
+    @keyframes panelGlow {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 0.9; }
+    }
+
+    @media (max-width: 768px) {
+      .card-shell { padding: 16px; }
+      .timer-display { font-size: 2rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="card-shell">
+    <div class="lang-switch">
+      <button class="lang-btn active" data-lang="tr">🇹🇷 TR</button>
+      <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
+    </div>
+
+    <h1>
+      <span class="icon">🍅</span>
+      <span id="title-text">Ortak Pomodoro</span>
+    </h1>
+    <div class="subtitle" id="subtitle-text">
+      Aynı odada toplan, Pomodoro başlat, konuya odaklan ve sonunda herkesin notlarını oku.
+    </div>
+
+    <!-- SETUP -->
+    <div class="row" id="setup-section">
+      <div class="col">
+        <div class="section-title" id="create-section-title">Yeni Oda Oluştur</div>
+        <label id="label-creator-name">İsmin</label>
+        <input id="creator-name" placeholder="Umut, Nova vs." />
+
+        <label style="margin-top:8px;" id="label-topic">Konu (ör: Rust öğrenme, makale okuma)</label>
+        <input id="topic-input" placeholder="Bugünkü odak konun" />
+
+        <div class="row" style="margin-top:8px; gap:10px;">
+          <div class="col">
+            <label id="label-focus-min">Odak süresi (dakika)</label>
+            <select id="focus-minutes">
+              <option value="25">25</option>
+              <option value="30">30</option>
+              <option value="45">45</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+          <div class="col">
+            <label id="label-break-min">Mola süresi (dakika)</label>
+            <select id="break-minutes">
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="0">0</option>
+            </select>
+          </div>
+        </div>
+
+        <button id="create-room-btn" style="margin-top:12px;">
+          <span id="btn-create-text">Oda Oluştur</span> <span>➕</span>
+        </button>
+        <div id="create-error" class="error"></div>
+      </div>
+
+      <div class="col">
+        <div class="section-title" id="join-section-title">Koda / Linke Göre Katıl</div>
+        <label id="label-join-name">İsmin</label>
+        <input id="join-name" placeholder="İsmin" />
+
+        <label style="margin-top:8px;" id="label-join-code">Oda Kodu</label>
+        <input id="join-code" placeholder="Örn: ABCD12" />
+
+        <button id="join-room-btn" style="margin-top:12px;" class="secondary">
+          <span id="btn-join-text">Odaya Katıl</span> <span>➡️</span>
+        </button>
+        <div id="join-help-text" style="margin-top:8px;font-size:0.8rem;color:var(--text-soft);">
+          Eğer linkle geldiysen kod otomatik dolabilir.
+        </div>
+        <div id="join-error" class="error"></div>
+      </div>
+    </div>
+
+    <!-- ROOM -->
+    <div id="room-section" style="display:none; margin-top:16px;">
+      <div class="row">
+        <div class="col">
+          <div class="section-title" id="room-section-title">Oda</div>
+          <div class="pill">
+            <span class="pill-dot" id="status-dot"></span>
+            <span id="room-status-text">Bekleniyor...</span>
+          </div>
+          <div class="pill topic-pill">
+            <span>📚</span>
+            <span id="room-topic">-</span>
+          </div>
+          <div class="info-line">
+            <span id="room-code-label">Oda kodu:</span>
+            <strong id="room-code">-</strong>
+          </div>
+          <div class="info-line">
+            <span id="room-link-label">Link:</span>
+            <a id="room-link" href="#" target="_blank" rel="noreferrer"></a>
+          </div>
+          <div class="info-line">
+            <span id="room-host-label">Host:</span>
+            <strong id="room-host">-</strong>
+          </div>
+
+          <div class="timer-shell">
+            <div class="timer-phase-label" id="timer-phase-label">Hazır.</div>
+            <div class="timer-display" id="timer-display">25:00</div>
+            <div class="room-actions" id="room-actions"></div>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="section-title" id="players-section-title">Katılımcılar</div>
+          <div class="players" id="participants-list"></div>
+
+          <div class="section-title" style="margin-top:12px;" id="stats-section-title">
+            Senin Serin & Rozetlerin
+          </div>
+          <div class="stats-card">
+            <div class="stats-grid">
+              <div class="stat-pill">
+                <div class="stat-label" id="stat-total-min-label">Toplam odak</div>
+                <div class="stat-value" id="stat-total-min">0 dk</div>
+              </div>
+              <div class="stat-pill">
+                <div class="stat-label" id="stat-sessions-label">Tamamlanan sprint</div>
+                <div class="stat-value" id="stat-sessions">0</div>
+              </div>
+              <div class="stat-pill">
+                <div class="stat-label" id="stat-streak-label">Günlük seri</div>
+                <div class="stat-value" id="stat-streak">0 🔥</div>
+              </div>
+            </div>
+            <div class="badge-list" id="badge-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reflection-shell">
+        <div class="section-title" id="reflection-section-title">Reflection · Oturum Sonu Notları</div>
+        <div class="reflection-grid">
+          <div>
+            <p id="reflection-hint" style="margin-top:0;margin-bottom:6px;color:var(--text-soft);font-size:0.85rem;">
+              Oturum bittiğinde kısa bir not yaz: ne başardın, neleri fark ettin, bir dahaki sefer neyi farklı yaparsın?
+            </p>
+            <label id="label-reflection-text">Notun</label>
+            <textarea id="reflection-text" rows="4" placeholder="Bugünkü pomodoro bana şunları öğretti..."></textarea>
+
+            <div class="row" style="margin-top:8px; gap:10px;">
+              <div class="col">
+                <label id="label-mood">Nasıl hissediyorsun?</label>
+                <select id="reflection-mood">
+                  <option value="">Seç (opsiyonel)</option>
+                  <option value="onfire">🔥 Aşırı odaklı</option>
+                  <option value="good">🙂 İyi</option>
+                  <option value="meh">😐 Orta</option>
+                  <option value="tired">😴 Yorgun</option>
+                </select>
+              </div>
+              <div class="col">
+                <label id="label-energy">Enerji seviyesi (1–5)</label>
+                <select id="reflection-energy">
+                  <option value="">-</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select>
+              </div>
+            </div>
+
+            <button id="save-reflection-btn" style="margin-top:10px;">
+              <span id="btn-save-reflection-text">Notumu Kaydet</span> <span>💬</span>
+            </button>
+            <div id="reflection-error" class="error"></div>
+          </div>
+
+          <div>
+            <div style="font-size:0.85rem;color:var(--text-soft);margin-bottom:4px;" id="reflection-list-title">
+              Oda Reflection Akışı
+            </div>
+            <div class="reflection-list" id="reflection-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:10px; font-size:0.8rem; color:var(--text-soft);" id="bottom-hint">
+        Not: Bu uygulama sadece birlikte odaklanma ve kendi gelişimini takip amaçlıdır; herhangi bir sosyal hesap, reklam veya takip yok.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+  // --- Supabase config (senin projen) ---
+  const SUPABASE_URL = "https://tkggowekxmnlixwinszl.supabase.co";
+  const SUPABASE_ANON_KEY =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrZ2dvd2VreG1ubGl4d2luc3psIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MzI1NjcsImV4cCI6MjA4MDMwODU2N30.y1GSvarl9YyBqMaP8x6SXeD88EJ10gjee4rlr6oLyZg";
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const LS_CLIENT_ID = "focus_client_id_v1";
+  const LS_STATE = "focus_state_v1";
+  const PHASE_GRACE_MS = 2000;
+
+  // --- i18n ---
+  let currentLang = "tr";
+
+  const textMap = {
+    tr: {
+      title: "Ortak Pomodoro",
+      subtitle: "Aynı odada toplan, Pomodoro başlat, konuya odaklan ve sonunda herkesin notlarını oku.",
+      createSectionTitle: "Yeni Oda Oluştur",
+      joinSectionTitle: "Koda / Linke Göre Katıl",
+      labelCreatorName: "İsmin",
+      labelTopic: "Konu (ör: Rust öğrenme, makale okuma)",
+      labelFocusMin: "Odak süresi (dakika)",
+      labelBreakMin: "Mola süresi (dakika)",
+      labelJoinName: "İsmin",
+      labelJoinCode: "Oda Kodu",
+      btnCreate: "Oda Oluştur",
+      btnJoin: "Odaya Katıl",
+      joinHelp: "Eğer linkle geldiysen kod otomatik dolabilir.",
+      roomSectionTitle: "Oda",
+      roomCodeLabel: "Oda kodu:",
+      roomLinkLabel: "Link:",
+      roomHostLabel: "Host:",
+      playersSectionTitle: "Katılımcılar",
+      statsSectionTitle: "Senin Serin & Rozetlerin",
+      statTotalMinLabel: "Toplam odak",
+      statSessionsLabel: "Tamamlanan sprint",
+      statStreakLabel: "Günlük seri",
+      statusWaiting: "Oda beklemede. Herkes hazır olunca Pomodoro başlat.",
+      statusFocus: "Odak zamanı! Bildirimleri kapat, sadece bu konuya bak.",
+      statusBreak: "Mola zamanı. Gözünü ekrandan ayır, biraz hareket et.",
+      statusReflect: "Reflection zamanı. Ne başardığını yaz.",
+      statusFinished: "Oturum bitti. İstersen yeni bir oda aç.",
+      timerReady: "Hazır.",
+      timerFocusLabel: "Odak süresi",
+      timerBreakLabel: "Mola süresi",
+      reflectionSectionTitle: "Reflection · Oturum Sonu Notları",
+      reflectionHint: "Oturum bittiğinde kısa bir not yaz: ne başardın, neleri fark ettin, bir dahaki sefer neyi farklı yaparsın?",
+      labelReflectionText: "Notun",
+      labelMood: "Nasıl hissediyorsun?",
+      labelEnergy: "Enerji seviyesi (1–5)",
+      btnSaveReflection: "Notumu Kaydet",
+      reflectionListTitle: "Oda Reflection Akışı",
+      errorNameRequired: "İsmini yazmalısın.",
+      errorTopicRequired: "Konu boş olamaz.",
+      errorCodeRequired: "Oda kodu boş olamaz.",
+      errorRoomNotFound: "Böyle bir oda bulunamadı.",
+      youLabel: "Sen",
+      hostTag: "Host",
+      btnStartFocus: "Pomodoro Başlat",
+      btnSkipToBreak: "Direkt Molaya Geç",
+      btnFinish: "Oturumu Bitir",
+      btnBackToLobby: "Lobiye Dön",
+      reflectionSaved: "Not kaydedildi.",
+      reflectionRequired: "Lütfen en az birkaç kelime yaz.",
+      streakSuffix: "🔥",
+      badgeFirstFocus: "İlk pomodoronu tamamladın",
+      badgeHour: "60+ dakika odak",
+      badgeFiveSessions: "5+ sprint",
+      badgeThreeDayStreak: "3 günlük seri",
+      badgeSevenDayStreak: "7 günlük seri",
+      badgeLabel: "Rozetler"
+    },
+    en: {
+      title: "Shared Pomodoro",
+      subtitle: "Create a room, set a topic, focus together and share reflections at the end.",
+      createSectionTitle: "Create New Room",
+      joinSectionTitle: "Join with Code / Link",
+      labelCreatorName: "Your name",
+      labelTopic: "Topic (e.g. Learn Rust, read paper)",
+      labelFocusMin: "Focus time (minutes)",
+      labelBreakMin: "Break time (minutes)",
+      labelJoinName: "Your name",
+      labelJoinCode: "Room Code",
+      btnCreate: "Create Room",
+      btnJoin: "Join Room",
+      joinHelp: "If you came via shared link, the code might be auto-filled.",
+      roomSectionTitle: "Room",
+      roomCodeLabel: "Room code:",
+      roomLinkLabel: "Link:",
+      roomHostLabel: "Host:",
+      playersSectionTitle: "Participants",
+      statsSectionTitle: "Your Streak & Badges",
+      statTotalMinLabel: "Total focus",
+      statSessionsLabel: "Completed sprints",
+      statStreakLabel: "Daily streak",
+      statusWaiting: "Room is waiting. Start the Pomodoro when everyone is ready.",
+      statusFocus: "Focus time! Mute distractions and work only on this topic.",
+      statusBreak: "Break time. Look away from the screen and move a bit.",
+      statusReflect: "Reflection time. Write what you did and learned.",
+      statusFinished: "Session finished. You can create a new room if you like.",
+      timerReady: "Ready.",
+      timerFocusLabel: "Focus phase",
+      timerBreakLabel: "Break phase",
+      reflectionSectionTitle: "Reflection · End of Session Notes",
+      reflectionHint: "When the session ends, write a short note: what did you do, notice, and want to improve next time?",
+      labelReflectionText: "Your note",
+      labelMood: "How do you feel?",
+      labelEnergy: "Energy level (1–5)",
+      btnSaveReflection: "Save my note",
+      reflectionListTitle: "Room Reflection Feed",
+      errorNameRequired: "Please enter your name.",
+      errorTopicRequired: "Topic cannot be empty.",
+      errorCodeRequired: "Room code cannot be empty.",
+      errorRoomNotFound: "Room not found.",
+      youLabel: "You",
+      hostTag: "Host",
+      btnStartFocus: "Start Pomodoro",
+      btnSkipToBreak: "Skip to Break",
+      btnFinish: "End Session",
+      btnBackToLobby: "Back to Lobby",
+      reflectionSaved: "Note saved.",
+      reflectionRequired: "Please write at least a few words.",
+      streakSuffix: "🔥",
+      badgeFirstFocus: "Completed your first Pomodoro",
+      badgeHour: "60+ minutes focused",
+      badgeFiveSessions: "5+ sprints",
+      badgeThreeDayStreak: "3-day streak",
+      badgeSevenDayStreak: "7-day streak",
+      badgeLabel: "Badges"
+    }
+  };
+
+  function t(key) {
+    return textMap[currentLang][key] || textMap["tr"][key] || key;
+  }
+
+  // --- Dom refs ---
+  const setupSection = document.getElementById("setup-section");
+  const roomSection = document.getElementById("room-section");
+
+  const titleText = document.getElementById("title-text");
+  const subtitleText = document.getElementById("subtitle-text");
+  const createSectionTitle = document.getElementById("create-section-title");
+  const joinSectionTitle = document.getElementById("join-section-title");
+  const labelCreatorName = document.getElementById("label-creator-name");
+  const labelTopic = document.getElementById("label-topic");
+  const labelFocusMin = document.getElementById("label-focus-min");
+  const labelBreakMin = document.getElementById("label-break-min");
+  const labelJoinName = document.getElementById("label-join-name");
+  const labelJoinCode = document.getElementById("label-join-code");
+  const btnCreateText = document.getElementById("btn-create-text");
+  const btnJoinText = document.getElementById("btn-join-text");
+  const joinHelpText = document.getElementById("join-help-text");
+
+  const roomSectionTitle = document.getElementById("room-section-title");
+  const roomStatusText = document.getElementById("room-status-text");
+  const statusDot = document.getElementById("status-dot");
+  const roomTopicEl = document.getElementById("room-topic");
+  const roomCodeLabel = document.getElementById("room-code-label");
+  const roomCodeEl = document.getElementById("room-code");
+  const roomLinkLabel = document.getElementById("room-link-label");
+  const roomLinkEl = document.getElementById("room-link");
+  const roomHostLabel = document.getElementById("room-host-label");
+  const roomHostEl = document.getElementById("room-host");
+  const timerDisplay = document.getElementById("timer-display");
+  const timerPhaseLabel = document.getElementById("timer-phase-label");
+  const roomActions = document.getElementById("room-actions");
+  const participantsList = document.getElementById("participants-list");
+
+  const statsSectionTitle = document.getElementById("stats-section-title");
+  const statTotalMinLabel = document.getElementById("stat-total-min-label");
+  const statSessionsLabel = document.getElementById("stat-sessions-label");
+  const statStreakLabel = document.getElementById("stat-streak-label");
+  const statTotalMinValue = document.getElementById("stat-total-min");
+  const statSessionsValue = document.getElementById("stat-sessions");
+  const statStreakValue = document.getElementById("stat-streak");
+  const badgeListEl = document.getElementById("badge-list");
+
+  const reflectionSectionTitle = document.getElementById("reflection-section-title");
+  const reflectionHint = document.getElementById("reflection-hint");
+  const labelReflectionText = document.getElementById("label-reflection-text");
+  const labelMood = document.getElementById("label-mood");
+  const labelEnergy = document.getElementById("label-energy");
+  const btnSaveReflectionText = document.getElementById("btn-save-reflection-text");
+  const reflectionListTitle = document.getElementById("reflection-list-title");
+
+  const reflectionTextEl = document.getElementById("reflection-text");
+  const reflectionMoodEl = document.getElementById("reflection-mood");
+  const reflectionEnergyEl = document.getElementById("reflection-energy");
+  const reflectionListEl = document.getElementById("reflection-list");
+  const reflectionErrorEl = document.getElementById("reflection-error");
+
+  const createErrorEl = document.getElementById("create-error");
+  const joinErrorEl = document.getElementById("join-error");
+
+  // Inputs
+  const creatorNameInput = document.getElementById("creator-name");
+  const topicInput = document.getElementById("topic-input");
+  const focusMinutesSelect = document.getElementById("focus-minutes");
+  const breakMinutesSelect = document.getElementById("break-minutes");
+  const joinNameInput = document.getElementById("join-name");
+  const joinCodeInput = document.getElementById("join-code");
+
+  // Buttons
+  const createRoomBtn = document.getElementById("create-room-btn");
+  const joinRoomBtn = document.getElementById("join-room-btn");
+  const saveReflectionBtn = document.getElementById("save-reflection-btn");
+
+  // State
+  let clientId = null;
+  let currentRoom = null;
+  let currentParticipant = null;
+  let participants = [];
+  let myStats = null;
+  let isHost = false;
+  let timerInterval = null;
+
+  // --- Utils ---
+  function ensureClientId() {
+    let id = localStorage.getItem(LS_CLIENT_ID);
+    if (!id) {
+      if (crypto && crypto.randomUUID) {
+        id = crypto.randomUUID();
+      } else {
+        id = "c_" + Math.random().toString(36).slice(2);
+      }
+      localStorage.setItem(LS_CLIENT_ID, id);
+    }
+    clientId = id;
+  }
+
+  function randomSlug(len = 6) {
+    return Math.random().toString(36).substring(2, 2 + len).toUpperCase();
+  }
+
+  function formatTimeLeft(seconds) {
+    const s = Math.max(0, seconds);
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    const mm = m.toString().padStart(2, "0");
+    const ss = r.toString().padStart(2, "0");
+    return `${mm}:${ss}`;
+  }
+
+  function phaseDurationSeconds(room) {
+    if (!room) return 0;
+    if (room.status === "focus") return (room.focus_minutes || 25) * 60;
+    if (room.status === "break") return (room.break_minutes || 0) * 60;
+    return 0;
+  }
+
+  function moodEmoji(mood) {
+    if (mood === "onfire") return "🔥";
+    if (mood === "good") return "🙂";
+    if (mood === "meh") return "😐";
+    if (mood === "tired") return "😴";
+    return "💬";
+  }
+
+  function saveLocalState() {
+    if (!currentRoom || !currentParticipant || !clientId) return;
+    const payload = {
+      roomSlug: currentRoom.slug,
+      participantId: currentParticipant.id,
+      clientId
+    };
+    localStorage.setItem(LS_STATE, JSON.stringify(payload));
+  }
+
+  function clearLocalState() {
+    localStorage.removeItem(LS_STATE);
+  }
+
+  // --- i18n apply ---
+  function applyLanguage() {
+    titleText.textContent = t("title");
+    subtitleText.textContent = t("subtitle");
+    createSectionTitle.textContent = t("createSectionTitle");
+    joinSectionTitle.textContent = t("joinSectionTitle");
+    labelCreatorName.textContent = t("labelCreatorName");
+    labelTopic.textContent = t("labelTopic");
+    labelFocusMin.textContent = t("labelFocusMin");
+    labelBreakMin.textContent = t("labelBreakMin");
+    labelJoinName.textContent = t("labelJoinName");
+    labelJoinCode.textContent = t("labelJoinCode");
+    btnCreateText.textContent = t("btnCreate");
+    btnJoinText.textContent = t("btnJoin");
+    joinHelpText.textContent = t("joinHelp");
+
+    roomSectionTitle.textContent = t("roomSectionTitle");
+    roomCodeLabel.textContent = t("roomCodeLabel");
+    roomLinkLabel.textContent = t("roomLinkLabel");
+    roomHostLabel.textContent = t("roomHostLabel");
+    statsSectionTitle.textContent = t("statsSectionTitle");
+    statTotalMinLabel.textContent = t("statTotalMinLabel");
+    statSessionsLabel.textContent = t("statSessionsLabel");
+    statStreakLabel.textContent = t("statStreakLabel");
+
+    reflectionSectionTitle.textContent = t("reflectionSectionTitle");
+    reflectionHint.textContent = t("reflectionHint");
+    labelReflectionText.textContent = t("labelReflectionText");
+    labelMood.textContent = t("labelMood");
+    labelEnergy.textContent = t("labelEnergy");
+    btnSaveReflectionText.textContent = t("btnSaveReflection");
+    reflectionListTitle.textContent = t("reflectionListTitle");
+
+    updateRoomUI();
+    renderStats();
+  }
+
+  // --- Supabase helpers ---
+  async function fetchRoomBySlug(slug) {
+    const { data, error } = await supabase
+      .from("focus_rooms")
+      .select("*")
+      .eq("slug", slug)
+      .single();
+    if (error) return null;
+    return data;
+  }
+
+  async function fetchRoomById(id) {
+    const { data, error } = await supabase
+      .from("focus_rooms")
+      .select("*")
+      .eq("id", id)
+      .single();
+    if (error) return null;
+    return data;
+  }
+
+  async function fetchParticipantById(id) {
+    const { data, error } = await supabase
+      .from("focus_participants")
+      .select("*")
+      .eq("id", id)
+      .single();
+    if (error) return null;
+    return data;
+  }
+
+  async function fetchParticipants(roomId) {
+    const { data, error } = await supabase
+      .from("focus_participants")
+      .select("*")
+      .eq("room_id", roomId)
+      .order("created_at", { ascending: true });
+    if (!error && data) {
+      participants = data;
+      const me = participants.find(p => p.id === (currentParticipant && currentParticipant.id));
+      if (me) currentParticipant = me;
+      updateRoomUI();
+    }
+  }
+
+  async function fetchMyStats() {
+    if (!clientId) return;
+    const { data, error } = await supabase
+      .from("focus_users")
+      .select("*")
+      .eq("client_id", clientId)
+      .maybeSingle();
+    if (!error && data) {
+      myStats = data;
+      renderStats();
+    }
+  }
+
+  async function ensureMyStats(displayName) {
+    if (!clientId) return;
+    const payload = {
+      client_id: clientId,
+      display_name: displayName || (myStats && myStats.display_name) || null
+    };
+    const { data, error } = await supabase
+      .from("focus_users")
+      .upsert(payload, { onConflict: "client_id" })
+      .select()
+      .single();
+    if (!error && data) {
+      myStats = data;
+      renderStats();
+    }
+  }
+
+  // --- Badges ---
+  function computeBadges(stats) {
+    if (!stats) return [];
+    const badges = [];
+    if (stats.total_sessions >= 1) {
+      badges.push({ id: "first", label: t("badgeFirstFocus"), emoji: "🥉" });
+    }
+    if (stats.total_focus_minutes >= 60) {
+      badges.push({ id: "hour", label: t("badgeHour"), emoji: "⏱" });
+    }
+    if (stats.total_sessions >= 5) {
+      badges.push({ id: "five", label: t("badgeFiveSessions"), emoji: "🚀" });
+    }
+    if (stats.streak_days >= 3) {
+      badges.push({ id: "three-streak", label: t("badgeThreeDayStreak"), emoji: "🔥" });
+    }
+    if (stats.longest_streak_days >= 7) {
+      badges.push({ id: "seven-streak", label: t("badgeSevenDayStreak"), emoji: "🏆" });
+    }
+    return badges;
+  }
+
+  function renderStats() {
+    if (!myStats) {
+      statTotalMinValue.textContent = "0 dk";
+      statSessionsValue.textContent = "0";
+      statStreakValue.textContent = "0 " + t("streakSuffix");
+      badgeListEl.innerHTML = "";
+      return;
+    }
+
+    statTotalMinValue.textContent = `${myStats.total_focus_minutes} dk`;
+    statSessionsValue.textContent = `${myStats.total_sessions}`;
+    statStreakValue.textContent = `${myStats.streak_days} ${t("streakSuffix")}`;
+
+    const badges = computeBadges(myStats);
+    badgeListEl.innerHTML = "";
+    badges.forEach(b => {
+      const chip = document.createElement("div");
+      chip.className = "badge-chip";
+      chip.innerHTML = `<span>${b.emoji}</span><span>${b.label}</span>`;
+      badgeListEl.appendChild(chip);
+    });
+  }
+
+  // --- Room UI ---
+  function updateRoomUI() {
+    if (!currentRoom) return;
+
+    roomTopicEl.textContent = currentRoom.topic || "-";
+    roomCodeEl.textContent = currentRoom.slug;
+    const link = `${window.location.origin}${window.location.pathname}?room=${currentRoom.slug}`;
+    roomLinkEl.href = link;
+    roomLinkEl.textContent = link;
+    roomHostEl.textContent = currentRoom.host_name || "-";
+
+    let statusText = "";
+    if (currentRoom.status === "waiting") statusText = t("statusWaiting");
+    else if (currentRoom.status === "focus") statusText = t("statusFocus");
+    else if (currentRoom.status === "break") statusText = t("statusBreak");
+    else if (currentRoom.status === "reflect") statusText = t("statusReflect");
+    else statusText = t("statusFinished");
+
+    roomStatusText.textContent = statusText;
+
+    // status dot color
+    if (currentRoom.status === "focus") {
+      statusDot.style.background = "#22c55e";
+    } else if (currentRoom.status === "break") {
+      statusDot.style.background = "#fbbf24";
+    } else if (currentRoom.status === "reflect") {
+      statusDot.style.background = "#38bdf8";
+    } else {
+      statusDot.style.background = "#9ca3af";
+    }
+
+    // participants
+    participantsList.innerHTML = "";
+    participants.forEach(p => {
+      const row = document.createElement("div");
+      row.className = "player-row";
+      if (currentParticipant && p.id === currentParticipant.id) {
+        row.classList.add("you");
+      }
+
+      const left = document.createElement("div");
+      left.className = "player-name";
+      const dot = document.createElement("div");
+      dot.className = "player-dot";
+      left.appendChild(dot);
+
+      const nameSpan = document.createElement("span");
+      nameSpan.textContent = p.name;
+      left.appendChild(nameSpan);
+
+      if (currentParticipant && p.id === currentParticipant.id) {
+        const tag = document.createElement("span");
+        tag.className = "player-tag";
+        tag.textContent = t("youLabel");
+        tag.style.borderColor = "rgba(56,189,248,0.7)";
+        left.appendChild(tag);
+      }
+
+      const right = document.createElement("div");
+      right.style.textAlign = "right";
+
+      if (p.is_host) {
+        const hostTag = document.createElement("span");
+        hostTag.className = "player-tag";
+        hostTag.textContent = t("hostTag");
+        right.appendChild(hostTag);
+      }
+
+      row.appendChild(left);
+      row.appendChild(right);
+      participantsList.appendChild(row);
+    });
+
+    // actions (only host kontrol but everyone zaman görsün)
+    roomActions.innerHTML = "";
+    if (isHost) {
+      if (currentRoom.status === "waiting") {
+        const btnStart = document.createElement("button");
+        btnStart.textContent = t("btnStartFocus");
+        btnStart.onclick = startFocusPhase;
+        roomActions.appendChild(btnStart);
+      } else if (currentRoom.status === "focus") {
+        const btnSkip = document.createElement("button");
+        btnSkip.className = "secondary";
+        btnSkip.textContent = t("btnSkipToBreak");
+        btnSkip.onclick = async () => advancePhase("break");
+        roomActions.appendChild(btnSkip);
+      } else if (currentRoom.status === "break") {
+        const btnNext = document.createElement("button");
+        btnNext.textContent = t("statusReflect");
+        btnNext.onclick = () => advancePhase("reflect");
+        roomActions.appendChild(btnNext);
+      }
+
+      if (currentRoom.status !== "finished") {
+        const btnFinish = document.createElement("button");
+        btnFinish.className = "secondary";
+        btnFinish.textContent = t("btnFinish");
+        btnFinish.onclick = endSession;
+        roomActions.appendChild(btnFinish);
+      }
+    }
+
+    const btnBack = document.createElement("button");
+    btnBack.className = "secondary";
+    btnBack.textContent = t("btnBackToLobby");
+    btnBack.onclick = () => {
+      clearLocalState();
+      window.location.href = window.location.pathname;
+    };
+    roomActions.appendChild(btnBack);
+  }
+
+  function updateTimerUI() {
+    if (!currentRoom) {
+      timerPhaseLabel.textContent = t("timerReady");
+      timerDisplay.textContent = "00:00";
+      timerDisplay.classList.remove("critical");
+      return;
+    }
+
+    const now = Date.now();
+    let secondsLeft = 0;
+    if (currentRoom.phase_ends_at && (currentRoom.status === "focus" || currentRoom.status === "break")) {
+      const endMs = new Date(currentRoom.phase_ends_at).getTime();
+      secondsLeft = Math.max(0, Math.round((endMs - now) / 1000));
+    } else if (currentRoom.status === "focus") {
+      secondsLeft = (currentRoom.focus_minutes || 25) * 60;
+    } else if (currentRoom.status === "break") {
+      secondsLeft = (currentRoom.break_minutes || 0) * 60;
+    } else {
+      secondsLeft = (currentRoom.focus_minutes || 25) * 60;
+    }
+
+    if (currentRoom.status === "focus") {
+      timerPhaseLabel.textContent = t("timerFocusLabel");
+    } else if (currentRoom.status === "break") {
+      timerPhaseLabel.textContent = t("timerBreakLabel");
+    } else if (currentRoom.status === "reflect") {
+      timerPhaseLabel.textContent = t("statusReflect");
+    } else if (currentRoom.status === "finished") {
+      timerPhaseLabel.textContent = t("statusFinished");
+    } else {
+      timerPhaseLabel.textContent = t("timerReady");
+    }
+
+    timerDisplay.textContent = formatTimeLeft(secondsLeft);
+    if (currentRoom.status === "focus" || currentRoom.status === "break") {
+      timerDisplay.classList.toggle("critical", secondsLeft <= 10);
+    } else {
+      timerDisplay.classList.remove("critical");
+    }
+
+    // host için otomatik faz geçişi
+    if (isHost && (currentRoom.status === "focus" || currentRoom.status === "break") &&
+        currentRoom.phase_ends_at) {
+      const endMs = new Date(currentRoom.phase_ends_at).getTime();
+      if (now > endMs + PHASE_GRACE_MS) {
+        // focus bitti -> break / break bitti -> reflect
+        const next =
+          currentRoom.status === "focus"
+            ? ((currentRoom.break_minutes || 0) > 0 ? "break" : "reflect")
+            : "reflect";
+        advancePhase(next);
+      }
+    }
+  }
+
+  // --- Phase transitions (host) ---
+  async function startFocusPhase() {
+    if (!currentRoom || !isHost) return;
+    const now = new Date();
+    const focusSeconds = (currentRoom.focus_minutes || 25) * 60;
+    const end = new Date(now.getTime() + focusSeconds * 1000);
+
+    const { data, error } = await supabase
+      .from("focus_rooms")
+      .update({
+        status: "focus",
+        phase_started_at: now.toISOString(),
+        phase_ends_at: end.toISOString(),
+        focus_awarded: false
+      })
+      .eq("id", currentRoom.id)
+      .select()
+      .single();
+
+    if (!error && data) {
+      currentRoom = data;
+      updateRoomUI();
+      updateTimerUI();
+    }
+  }
+
+  async function awardFocusIfNeeded() {
+    if (!currentRoom || !isHost) return;
+    if (currentRoom.focus_awarded) return;
+
+    const { data: roomParticipants } = await supabase
+      .from("focus_participants")
+      .select("*")
+      .eq("room_id", currentRoom.id);
+
+    if (!roomParticipants || !roomParticipants.length) return;
+
+    const uniqueClientIds = [...new Set(roomParticipants.map(p => p.client_id))];
+
+    const { data: existingStats } = await supabase
+      .from("focus_users")
+      .select("*")
+      .in("client_id", uniqueClientIds);
+
+    const statsMap = new Map();
+    if (existingStats) {
+      existingStats.forEach(s => statsMap.set(s.client_id, s));
+    }
+
+    const focusMinutes = currentRoom.focus_minutes || 25;
+    const today = new Date().toISOString().slice(0, 10);
+
+    const upserts = uniqueClientIds.map(id => {
+      const prev = statsMap.get(id) || {
+        client_id: id,
+        display_name: null,
+        total_focus_minutes: 0,
+        total_sessions: 0,
+        streak_days: 0,
+        longest_streak_days: 0,
+        last_focus_date: null
+      };
+
+      let streak = prev.streak_days || 0;
+      let longest = prev.longest_streak_days || 0;
+      const lastDate = prev.last_focus_date;
+
+      if (!lastDate) {
+        streak = 1;
+      } else {
+        const last = new Date(lastDate);
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const lastStr = last.toISOString().slice(0, 10);
+        const todayStr = today;
+        const yStr = yesterday.toISOString().slice(0, 10);
+
+        if (lastStr === todayStr) {
+          // aynı gün; streak değişmeden
+        } else if (lastStr === yStr) {
+          streak += 1;
+        } else {
+          streak = 1;
+        }
+      }
+
+      if (streak > (longest || 0)) longest = streak;
+
+      return {
+        client_id: id,
+        display_name: prev.display_name,
+        total_focus_minutes: (prev.total_focus_minutes || 0) + focusMinutes,
+        total_sessions: (prev.total_sessions || 0) + 1,
+        streak_days: streak,
+        longest_streak_days: longest,
+        last_focus_date: today
+      };
+    });
+
+    await supabase.from("focus_users").upsert(upserts, { onConflict: "client_id" });
+    await supabase
+      .from("focus_rooms")
+      .update({ focus_awarded: true })
+      .eq("id", currentRoom.id);
+
+    // kendi stats’imizi yeniden çekelim
+    await fetchMyStats();
+  }
+
+  async function advancePhase(nextStatus) {
+    if (!currentRoom || !isHost) return;
+
+    // focus -> break/reflect geçerken bir kere istatistik işleyelim
+    if (currentRoom.status === "focus") {
+      await awardFocusIfNeeded();
+    }
+
+    const now = new Date();
+    let phaseStartedAt = now.toISOString();
+    let phaseEndsAt = null;
+
+    if (nextStatus === "focus") {
+      const s = (currentRoom.focus_minutes || 25) * 60;
+      phaseEndsAt = new Date(now.getTime() + s * 1000).toISOString();
+    } else if (nextStatus === "break") {
+      const s = (currentRoom.break_minutes || 0) * 60;
+      phaseEndsAt = s > 0 ? new Date(now.getTime() + s * 1000).toISOString() : null;
+    } else {
+      phaseStartedAt = now.toISOString();
+      phaseEndsAt = null;
+    }
+
+    const { data, error } = await supabase
+      .from("focus_rooms")
+      .update({
+        status: nextStatus,
+        phase_started_at: phaseStartedAt,
+        phase_ends_at: phaseEndsAt
+      })
+      .eq("id", currentRoom.id)
+      .select()
+      .single();
+
+    if (!error && data) {
+      currentRoom = data;
+      updateRoomUI();
+      updateTimerUI();
+    }
+  }
+
+  async function endSession() {
+    if (!currentRoom || !isHost) return;
+
+    if (currentRoom.status === "focus") {
+      await awardFocusIfNeeded();
+    }
+
+    const { data, error } = await supabase
+      .from("focus_rooms")
+      .update({
+        status: "finished",
+        phase_started_at: null,
+        phase_ends_at: null
+      })
+      .eq("id", currentRoom.id)
+      .select()
+      .single();
+
+    if (!error && data) {
+      currentRoom = data;
+      updateRoomUI();
+      updateTimerUI();
+    }
+  }
+
+  // --- Reflection ---
+  async function loadReflections() {
+    if (!currentRoom) return;
+    const { data, error } = await supabase
+      .from("focus_reflections")
+      .select("*")
+      .eq("room_id", currentRoom.id)
+      .order("created_at", { ascending: false });
+    if (!error && data) {
+      renderReflections(data);
+    }
+  }
+
+  function renderReflections(rows) {
+    reflectionListEl.innerHTML = "";
+    if (!rows || !rows.length) {
+      const empty = document.createElement("div");
+      empty.style.color = "var(--text-soft)";
+      empty.style.fontSize = "0.8rem";
+      empty.textContent =
+        currentLang === "tr"
+          ? "Henüz kimse not bırakmadı."
+          : "No reflections yet.";
+      reflectionListEl.appendChild(empty);
+      return;
+    }
+
+    const participantMap = new Map();
+    participants.forEach(p => participantMap.set(p.id, p));
+
+    rows.forEach(r => {
+      const item = document.createElement("div");
+      item.className = "reflection-item";
+
+      const meta = document.createElement("div");
+      meta.className = "reflection-meta";
+
+      const left = document.createElement("span");
+      const p = participantMap.get(r.participant_id);
+      const name = p ? p.name : "Anon";
+      left.textContent = name;
+
+      const right = document.createElement("span");
+      const mood = r.mood ? `${moodEmoji(r.mood)} ` : "";
+      const energy = r.energy_level ? ` · ⚡${r.energy_level}/5` : "";
+      const date = new Date(r.created_at);
+      const timeStr = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      right.textContent = `${mood}${timeStr}${energy}`;
+
+      meta.appendChild(left);
+      meta.appendChild(right);
+
+      const textEl = document.createElement("div");
+      textEl.className = "reflection-text";
+      textEl.textContent = r.text;
+
+      item.appendChild(meta);
+      item.appendChild(textEl);
+      reflectionListEl.appendChild(item);
+    });
+  }
+
+  async function saveReflection() {
+    reflectionErrorEl.textContent = "";
+    const text = reflectionTextEl.value.trim();
+    if (!text) {
+      reflectionErrorEl.textContent = t("reflectionRequired");
+      return;
+    }
+    if (!currentRoom || !currentParticipant) return;
+
+    const mood = reflectionMoodEl.value || null;
+    const energy = reflectionEnergyEl.value ? parseInt(reflectionEnergyEl.value, 10) : null;
+
+    const { error } = await supabase
+      .from("focus_reflections")
+      .insert({
+        room_id: currentRoom.id,
+        participant_id: currentParticipant.id,
+        text,
+        mood,
+        energy_level: energy
+      });
+
+    if (error) {
+      reflectionErrorEl.textContent = error.message;
+      return;
+    }
+
+    reflectionTextEl.value = "";
+    reflectionMoodEl.value = "";
+    reflectionEnergyEl.value = "";
+    reflectionErrorEl.textContent = t("reflectionSaved");
+    await loadReflections();
+  }
+
+  // --- Join / create room ---
+  async function createRoom() {
+    createErrorEl.textContent = "";
+    const name = creatorNameInput.value.trim();
+    const topic = topicInput.value.trim();
+    const focusMin = parseInt(focusMinutesSelect.value, 10) || 25;
+    const breakMin = parseInt(breakMinutesSelect.value, 10) || 5;
+
+    if (!name) {
+      createErrorEl.textContent = t("errorNameRequired");
+      return;
+    }
+    if (!topic) {
+      createErrorEl.textContent = t("errorTopicRequired");
+      return;
+    }
+
+    await ensureMyStats(name);
+
+    const slug = randomSlug();
+
+    const { data: room, error } = await supabase
+      .from("focus_rooms")
+      .insert({
+        slug,
+        topic,
+        host_name: name,
+        focus_minutes: focusMin,
+        break_minutes: breakMin
+      })
+      .select()
+      .single();
+
+    if (error) {
+      createErrorEl.textContent = error.message;
+      return;
+    }
+
+    const { data: participant, error: pErr } = await supabase
+      .from("focus_participants")
+      .insert({
+        room_id: room.id,
+        client_id: clientId,
+        name,
+        is_host: true,
+        current_status: "joined"
+      })
+      .select()
+      .single();
+
+    if (pErr) {
+      createErrorEl.textContent = pErr.message;
+      return;
+    }
+
+    enterRoom(room, participant);
+  }
+
+  async function joinRoom() {
+    joinErrorEl.textContent = "";
+    const name = joinNameInput.value.trim();
+    const code = joinCodeInput.value.trim().toUpperCase();
+
+    if (!name) {
+      joinErrorEl.textContent = t("errorNameRequired");
+      return;
+    }
+    if (!code) {
+      joinErrorEl.textContent = t("errorCodeRequired");
+      return;
+    }
+
+    const room = await fetchRoomBySlug(code);
+    if (!room) {
+      joinErrorEl.textContent = t("errorRoomNotFound");
+      return;
+    }
+
+    await ensureMyStats(name);
+
+    const { data: participant, error } = await supabase
+      .from("focus_participants")
+      .insert({
+        room_id: room.id,
+        client_id: clientId,
+        name,
+        is_host: false,
+        current_status: "joined"
+      })
+      .select()
+      .single();
+
+    if (error) {
+      joinErrorEl.textContent = error.message;
+      return;
+    }
+
+    enterRoom(room, participant);
+  }
+
+  function enterRoom(room, participant) {
+    currentRoom = room;
+    currentParticipant = participant;
+    isHost = !!participant.is_host;
+    setupSection.style.display = "none";
+    roomSection.style.display = "block";
+    saveLocalState();
+    updateRoomUI();
+    updateTimerUI();
+    attachRealtime(room.id);
+    fetchParticipants(room.id);
+    fetchMyStats();
+    loadReflections();
+  }
+
+  function attachRealtime(roomId) {
+    supabase
+      .channel("focus-room-" + roomId)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "focus_rooms", filter: `id=eq.${roomId}` },
+        payload => {
+          if (payload.new) {
+            currentRoom = payload.new;
+            updateRoomUI();
+            updateTimerUI();
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "focus_participants", filter: `room_id=eq.${roomId}` },
+        () => {
+          fetchParticipants(roomId);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "focus_reflections", filter: `room_id=eq.${roomId}` },
+        () => {
+          loadReflections();
+        }
+      )
+      .subscribe();
+
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(updateTimerUI, 1000);
+  }
+
+  async function autoRejoin() {
+    // URL param
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = params.get("room");
+    if (fromUrl) {
+      joinCodeInput.value = fromUrl.toUpperCase();
+    }
+
+    let saved = null;
+    try {
+      saved = JSON.parse(localStorage.getItem(LS_STATE) || "null");
+    } catch (_) {
+      saved = null;
+    }
+    if (!saved || !saved.roomSlug || !saved.participantId || saved.clientId !== clientId) {
+      return;
+    }
+
+    const room = await fetchRoomBySlug(saved.roomSlug);
+    if (!room) {
+      clearLocalState();
+      return;
+    }
+    const participant = await fetchParticipantById(saved.participantId);
+    if (!participant) {
+      clearLocalState();
+      return;
+    }
+
+    enterRoom(room, participant);
+  }
+
+  // --- Events ---
+  createRoomBtn.addEventListener("click", createRoom);
+  joinRoomBtn.addEventListener("click", joinRoom);
+  saveReflectionBtn.addEventListener("click", saveReflection);
+
+  // Lang switch
+  document.querySelectorAll(".lang-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const lang = btn.dataset.lang;
+      if (!lang || lang === currentLang) return;
+      currentLang = lang;
+      document.querySelectorAll(".lang-btn").forEach(b =>
+        b.classList.toggle("active", b.dataset.lang === currentLang)
+      );
+      applyLanguage();
+    });
+  });
+
+  // --- init ---
+  ensureClientId();
+  applyLanguage();
+  autoRejoin();
+</script>
+</body>
+</html>
