@@ -677,22 +677,34 @@
         <div class="row" style="margin-top:8px; gap:10px;">
           <div class="col">
             <label id="label-focus-min">Odak süresi (dakika)</label>
-            <select id="focus-minutes">
-              <option value="25">25</option>
-              <option value="30">30</option>
-              <option value="45">45</option>
-              <option value="50">50</option>
-            </select>
+            <input
+              id="focus-minutes"
+              type="number"
+              min="1"
+              max="240"
+              value="25"
+              placeholder="Örn: 25"
+            />
+            <div class="info-line" style="margin-top:4px;">
+              Öneri: 25–50 dakika arası.
+            </div>
           </div>
           <div class="col">
             <label id="label-break-min">Mola süresi (dakika)</label>
-            <select id="break-minutes">
-              <option value="5">5</option>
-              <option value="10">10</option>
-              <option value="0">0</option>
-            </select>
+            <input
+              id="break-minutes"
+              type="number"
+              min="0"
+              max="60"
+              value="5"
+              placeholder="Örn: 5"
+            />
+            <div class="info-line" style="margin-top:4px;">
+              Mola istemiyorsan 0 yazabilirsin.
+            </div>
           </div>
         </div>
+
 
         <button id="create-room-btn" style="margin-top:12px;">
           <span id="btn-create-text">Oda Oluştur</span> <span>➕</span>
@@ -856,15 +868,134 @@
   const LS_DISPLAY_NAME = "pomostudy_display_name";
   const LS_PROFILE_ID = "pomostudy_profile_id";
   const PHASE_GRACE_MS = 2000;
+  const LS_BADGES_SEEN = "focus_badges_seen_v1"; // ✅ yeni
 
   let profileId = "";
   let profileData = null;
   const avatarEmojis = ["📚", "🚀", "🧠", "🌙", "🔥", "💡", "🎧", "🌟", "📝", "🌊"];
   const avatarColors = ["#38bdf8", "#a855f7", "#22c55e", "#f97316", "#0ea5e9", "#ef4444", "#f59e0b", "#10b981"];
+  // --- Dom refs ---
+  const setupSection = document.getElementById("setup-section");
+  const roomSection = document.getElementById("room-section");
 
+  const titleText = document.getElementById("title-text");
+  const subtitleText = document.getElementById("subtitle-text");
+  const createSectionTitle = document.getElementById("create-section-title");
+  const joinSectionTitle = document.getElementById("join-section-title");
+  const labelCreatorName = document.getElementById("label-creator-name");
+  const labelTopic = document.getElementById("label-topic");
+  const labelFocusMin = document.getElementById("label-focus-min");
+  const labelBreakMin = document.getElementById("label-break-min");
+  const labelJoinName = document.getElementById("label-join-name");
+  const labelJoinCode = document.getElementById("label-join-code");
+  const btnCreateText = document.getElementById("btn-create-text");
+  const btnJoinText = document.getElementById("btn-join-text");
+  const joinHelpText = document.getElementById("join-help-text");
+
+  const nameModal = document.getElementById("name-modal");
+  const nameModalTitle = document.getElementById("name-modal-title");
+  const nameModalDesc = document.getElementById("name-modal-desc");
+  const nameModalInput = document.getElementById("name-modal-input");
+  const nameModalSave = document.getElementById("name-modal-save");
+  const nameModalSaveText = document.getElementById("name-modal-save-text");
+  const nameModalError = document.getElementById("name-modal-error");
+
+  const roomSectionTitle = document.getElementById("room-section-title");
+  const roomStatusText = document.getElementById("room-status-text");
+  const statusDot = document.getElementById("status-dot");
+  const roomTopicEl = document.getElementById("room-topic");
+  const roomCodeLabel = document.getElementById("room-code-label");
+  const roomCodeEl = document.getElementById("room-code");
+  const roomLinkLabel = document.getElementById("room-link-label");
+  const roomLinkEl = document.getElementById("room-link");
+  const roomHostLabel = document.getElementById("room-host-label");
+  const roomHostEl = document.getElementById("room-host");
+  const roomEditShell = document.getElementById("room-edit-shell");
+  const timerDisplay = document.getElementById("timer-display");
+  const timerPhaseLabel = document.getElementById("timer-phase-label");
+  const timerProgressFill = document.getElementById("timer-progress-fill");
+  const roomActions = document.getElementById("room-actions");
+  const participantsList = document.getElementById("participants-list");
+
+  const statsSectionTitle = document.getElementById("stats-section-title");
+  const statTotalMinLabel = document.getElementById("stat-total-min-label");
+  const statSessionsLabel = document.getElementById("stat-sessions-label");
+  const statStreakLabel = document.getElementById("stat-streak-label");
+  const statTotalMinValue = document.getElementById("stat-total-min");
+  const statSessionsValue = document.getElementById("stat-sessions");
+  const statStreakValue = document.getElementById("stat-streak");
+  const badgeListEl = document.getElementById("badge-list");
+
+  const reflectionSectionTitle = document.getElementById("reflection-section-title");
+  const reflectionHint = document.getElementById("reflection-hint");
+  const labelReflectionText = document.getElementById("label-reflection-text");
+  const labelMood = document.getElementById("label-mood");
+  const labelEnergy = document.getElementById("label-energy");
+  const btnSaveReflectionText = document.getElementById("btn-save-reflection-text");
+  const reflectionListTitle = document.getElementById("reflection-list-title");
+
+  const reflectionTextEl = document.getElementById("reflection-text");
+  const reflectionMoodEl = document.getElementById("reflection-mood");
+  const reflectionEnergyEl = document.getElementById("reflection-energy");
+  const reflectionListEl = document.getElementById("reflection-list");
+  const reflectionErrorEl = document.getElementById("reflection-error");
+
+  const createErrorEl = document.getElementById("create-error");
+  const joinErrorEl = document.getElementById("join-error");
+
+  const avatarChip = document.getElementById("avatar-chip");
+  const avatarCircle = document.getElementById("avatar-circle");
+  const avatarNameLabel = document.getElementById("avatar-name-label");
+  const avatarEditLabel = document.getElementById("avatar-edit-label");
+  const avatarModal = document.getElementById("avatar-modal");
+  const avatarEmojiGrid = document.getElementById("avatar-emoji-grid");
+  const avatarColorGrid = document.getElementById("avatar-color-grid");
+  const avatarSaveBtn = document.getElementById("avatar-save-btn");
+  const avatarCancelBtn = document.getElementById("avatar-cancel-btn");
+  const avatarModalTitle = document.getElementById("avatar-modal-title");
+  const avatarModalDesc = document.getElementById("avatar-modal-desc");
+  const avatarEmojiLabel = document.getElementById("avatar-emoji-label");
+  const avatarColorLabel = document.getElementById("avatar-color-label");
+  const avatarSaveText = document.getElementById("avatar-save-text");
+
+  const badgeModal = document.getElementById("badge-modal");
+  const badgeModalTitleText = document.getElementById("badge-modal-title-text");
+  const badgeModalEmoji = document.getElementById("badge-modal-emoji");
+  const badgeModalText = document.getElementById("badge-modal-text");
+  const badgeModalCloseBtn = document.getElementById("badge-modal-close-btn");
+
+  const streakPill = document.getElementById("streak-pill");
+  const streakCurrent = document.getElementById("streak-current");
+  const streakLabel = document.getElementById("streak-label");
+  const streakBest = document.getElementById("streak-best");
+
+  // Inputs
+  const creatorNameInput = document.getElementById("creator-name");
+  const topicInput = document.getElementById("topic-input");
+  const focusMinutesSelect = document.getElementById("focus-minutes");
+  const breakMinutesSelect = document.getElementById("break-minutes");
+  const joinNameInput = document.getElementById("join-name");
+  const joinCodeInput = document.getElementById("join-code");
+
+  // Buttons
+  const createRoomBtn = document.getElementById("create-room-btn");
+  const joinRoomBtn = document.getElementById("join-room-btn");
+  const saveReflectionBtn = document.getElementById("save-reflection-btn");
+
+  // State
+  let clientId = null;
+  let currentRoom = null;
+  let currentParticipant = null;
+  let participants = [];
+  let myStats = null;
+  let isHost = false;
+  let timerInterval = null;
+  let lastBadgeIds = [];
   // --- i18n ---
   let currentLang = "tr";
-
+  let lastTimerPhaseKey = null;
+  let alarmPlayedForPhase = false;
+  
   const textMap = {
     tr: {
       title: "Ortak Pomodoro",
@@ -1023,6 +1154,52 @@
   function t(key) {
     return textMap[currentLang][key] || textMap["tr"][key] || key;
   }
+  
+  function playAlarm() {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioCtx();
+  
+      const now = ctx.currentTime;
+  
+      // Küçük, yumuşak bir 4-beep patterni
+      const notes = [
+        { freq: 880,  start: 0.00, length: 0.35 }, // A5
+        { freq: 988,  start: 0.40, length: 0.35 }, // B5
+        { freq: 880,  start: 0.80, length: 0.35 },
+        { freq: 988,  start: 1.20, length: 0.35 }
+      ];
+  
+      notes.forEach(note => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+  
+        osc.type = "sine"; // istersen "triangle" da deneyebilirsin, daha yumuşak
+        osc.frequency.setValueAtTime(note.freq, now + note.start);
+  
+        // Yumuşak attack/decay
+        const attack = 0.03;
+        const release = 0.15;
+        const peak = 0.22;
+  
+        gain.gain.setValueAtTime(0.0001, now + note.start);
+        gain.gain.linearRampToValueAtTime(peak, now + note.start + attack);
+        gain.gain.linearRampToValueAtTime(
+          0.0001,
+          now + note.start + note.length - release
+        );
+  
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+  
+        osc.start(now + note.start);
+        osc.stop(now + note.start + note.length);
+      });
+    } catch (e) {
+      console.warn("Alarm çalınamadı:", e);
+    }
+  }
+
 
   function applyDisplayNameToInputs(name) {
     if (!name) return;
@@ -1080,123 +1257,7 @@
     });
   }
 
-  // --- Dom refs ---
-  const setupSection = document.getElementById("setup-section");
-  const roomSection = document.getElementById("room-section");
-
-  const titleText = document.getElementById("title-text");
-  const subtitleText = document.getElementById("subtitle-text");
-  const createSectionTitle = document.getElementById("create-section-title");
-  const joinSectionTitle = document.getElementById("join-section-title");
-  const labelCreatorName = document.getElementById("label-creator-name");
-  const labelTopic = document.getElementById("label-topic");
-  const labelFocusMin = document.getElementById("label-focus-min");
-  const labelBreakMin = document.getElementById("label-break-min");
-  const labelJoinName = document.getElementById("label-join-name");
-  const labelJoinCode = document.getElementById("label-join-code");
-  const btnCreateText = document.getElementById("btn-create-text");
-  const btnJoinText = document.getElementById("btn-join-text");
-  const joinHelpText = document.getElementById("join-help-text");
-
-  const nameModal = document.getElementById("name-modal");
-  const nameModalTitle = document.getElementById("name-modal-title");
-  const nameModalDesc = document.getElementById("name-modal-desc");
-  const nameModalInput = document.getElementById("name-modal-input");
-  const nameModalSave = document.getElementById("name-modal-save");
-  const nameModalSaveText = document.getElementById("name-modal-save-text");
-  const nameModalError = document.getElementById("name-modal-error");
-
-  const roomSectionTitle = document.getElementById("room-section-title");
-  const roomStatusText = document.getElementById("room-status-text");
-  const statusDot = document.getElementById("status-dot");
-  const roomTopicEl = document.getElementById("room-topic");
-  const roomCodeLabel = document.getElementById("room-code-label");
-  const roomCodeEl = document.getElementById("room-code");
-  const roomLinkLabel = document.getElementById("room-link-label");
-  const roomLinkEl = document.getElementById("room-link");
-  const roomHostLabel = document.getElementById("room-host-label");
-  const roomHostEl = document.getElementById("room-host");
-  const roomEditShell = document.getElementById("room-edit-shell");
-  const timerDisplay = document.getElementById("timer-display");
-  const timerPhaseLabel = document.getElementById("timer-phase-label");
-  const timerProgressFill = document.getElementById("timer-progress-fill");
-  const roomActions = document.getElementById("room-actions");
-  const participantsList = document.getElementById("participants-list");
-
-  const statsSectionTitle = document.getElementById("stats-section-title");
-  const statTotalMinLabel = document.getElementById("stat-total-min-label");
-  const statSessionsLabel = document.getElementById("stat-sessions-label");
-  const statStreakLabel = document.getElementById("stat-streak-label");
-  const statTotalMinValue = document.getElementById("stat-total-min");
-  const statSessionsValue = document.getElementById("stat-sessions");
-  const statStreakValue = document.getElementById("stat-streak");
-  const badgeListEl = document.getElementById("badge-list");
-
-  const reflectionSectionTitle = document.getElementById("reflection-section-title");
-  const reflectionHint = document.getElementById("reflection-hint");
-  const labelReflectionText = document.getElementById("label-reflection-text");
-  const labelMood = document.getElementById("label-mood");
-  const labelEnergy = document.getElementById("label-energy");
-  const btnSaveReflectionText = document.getElementById("btn-save-reflection-text");
-  const reflectionListTitle = document.getElementById("reflection-list-title");
-
-  const reflectionTextEl = document.getElementById("reflection-text");
-  const reflectionMoodEl = document.getElementById("reflection-mood");
-  const reflectionEnergyEl = document.getElementById("reflection-energy");
-  const reflectionListEl = document.getElementById("reflection-list");
-  const reflectionErrorEl = document.getElementById("reflection-error");
-
-  const createErrorEl = document.getElementById("create-error");
-  const joinErrorEl = document.getElementById("join-error");
-
-  const avatarChip = document.getElementById("avatar-chip");
-  const avatarCircle = document.getElementById("avatar-circle");
-  const avatarNameLabel = document.getElementById("avatar-name-label");
-  const avatarEditLabel = document.getElementById("avatar-edit-label");
-  const avatarModal = document.getElementById("avatar-modal");
-  const avatarEmojiGrid = document.getElementById("avatar-emoji-grid");
-  const avatarColorGrid = document.getElementById("avatar-color-grid");
-  const avatarSaveBtn = document.getElementById("avatar-save-btn");
-  const avatarCancelBtn = document.getElementById("avatar-cancel-btn");
-  const avatarModalTitle = document.getElementById("avatar-modal-title");
-  const avatarModalDesc = document.getElementById("avatar-modal-desc");
-  const avatarEmojiLabel = document.getElementById("avatar-emoji-label");
-  const avatarColorLabel = document.getElementById("avatar-color-label");
-  const avatarSaveText = document.getElementById("avatar-save-text");
-
-  const badgeModal = document.getElementById("badge-modal");
-  const badgeModalTitleText = document.getElementById("badge-modal-title-text");
-  const badgeModalEmoji = document.getElementById("badge-modal-emoji");
-  const badgeModalText = document.getElementById("badge-modal-text");
-  const badgeModalCloseBtn = document.getElementById("badge-modal-close-btn");
-
-  const streakPill = document.getElementById("streak-pill");
-  const streakCurrent = document.getElementById("streak-current");
-  const streakLabel = document.getElementById("streak-label");
-  const streakBest = document.getElementById("streak-best");
-
-  // Inputs
-  const creatorNameInput = document.getElementById("creator-name");
-  const topicInput = document.getElementById("topic-input");
-  const focusMinutesSelect = document.getElementById("focus-minutes");
-  const breakMinutesSelect = document.getElementById("break-minutes");
-  const joinNameInput = document.getElementById("join-name");
-  const joinCodeInput = document.getElementById("join-code");
-
-  // Buttons
-  const createRoomBtn = document.getElementById("create-room-btn");
-  const joinRoomBtn = document.getElementById("join-room-btn");
-  const saveReflectionBtn = document.getElementById("save-reflection-btn");
-
-  // State
-  let clientId = null;
-  let currentRoom = null;
-  let currentParticipant = null;
-  let participants = [];
-  let myStats = null;
-  let isHost = false;
-  let timerInterval = null;
-  let lastBadgeIds = [];
+  
 
   // --- Utils ---
   function ensureClientId() {
@@ -1514,6 +1575,22 @@
     }
   }
 
+  function loadSeenBadges() {
+    try {
+      const raw = localStorage.getItem(LS_BADGES_SEEN);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
+  
+  function saveSeenBadges(ids) {
+    try {
+      localStorage.setItem(LS_BADGES_SEEN, JSON.stringify(ids));
+    } catch {}
+  }
+
+
   // --- Badges ---
   function computeBadges(stats) {
     if (!stats) return [];
@@ -1542,14 +1619,13 @@
       statSessionsValue.textContent = "0";
       statStreakValue.textContent = "0 " + t("streakSuffix");
       badgeListEl.innerHTML = "";
-      lastBadgeIds = [];
       return;
     }
-
+  
     statTotalMinValue.textContent = `${myStats.total_focus_minutes} dk`;
     statSessionsValue.textContent = `${myStats.total_sessions}`;
     statStreakValue.textContent = `${myStats.streak_days} ${t("streakSuffix")}`;
-
+  
     const badges = computeBadges(myStats);
     badgeListEl.innerHTML = "";
     badges.forEach(b => {
@@ -1558,18 +1634,23 @@
       chip.innerHTML = `<span>${b.emoji}</span><span>${b.label}</span>`;
       badgeListEl.appendChild(chip);
     });
-
+  
+    // ✅ Aynı rozeti sadece bir kez göster
+    const seen = loadSeenBadges();
     const currentIds = badges.map(b => b.id);
-    const newlyUnlocked = currentIds.filter(id => !lastBadgeIds.includes(id));
+    const newlyUnlocked = currentIds.filter(id => !seen.includes(id));
+  
     if (newlyUnlocked.length > 0) {
       const newId = newlyUnlocked[newlyUnlocked.length - 1];
       const newBadge = badges.find(b => b.id === newId);
       if (newBadge) {
         showBadgeModal(newBadge);
+        const updatedSeen = Array.from(new Set([...seen, newId]));
+        saveSeenBadges(updatedSeen);
       }
     }
-    lastBadgeIds = currentIds;
-  }
+}
+
 
   function showBadgeModal(badge) {
     badgeModalEmoji.textContent = badge.emoji;
@@ -1777,7 +1858,7 @@
       if (timerProgressFill) timerProgressFill.style.width = "0%";
       return;
     }
-
+  
     const now = Date.now();
     let secondsLeft = 0;
     if (currentRoom.phase_ends_at && (currentRoom.status === "focus" || currentRoom.status === "break")) {
@@ -1790,7 +1871,7 @@
     } else {
       secondsLeft = (currentRoom.focus_minutes || 25) * 60;
     }
-
+  
     if (currentRoom.status === "focus") {
       timerPhaseLabel.textContent = t("timerFocusLabel");
     } else if (currentRoom.status === "break") {
@@ -1802,14 +1883,14 @@
     } else {
       timerPhaseLabel.textContent = t("timerReady");
     }
-
+  
     timerDisplay.textContent = formatTimeLeft(secondsLeft);
     if (currentRoom.status === "focus" || currentRoom.status === "break") {
       timerDisplay.classList.toggle("critical", secondsLeft <= 10);
     } else {
       timerDisplay.classList.remove("critical");
     }
-
+  
     if (currentRoom.status === "focus" || currentRoom.status === "break") {
       const total = phaseDurationSeconds(currentRoom);
       let ratio = 0;
@@ -1822,7 +1903,25 @@
     } else if (timerProgressFill) {
       timerProgressFill.style.width = "0%";
     }
-
+  
+    // 🔔 --- ALARM BLOĞU BURADA ---
+    const phaseKey = `${currentRoom.id}_${currentRoom.status}`;
+    if (phaseKey !== lastTimerPhaseKey) {
+      // Yeni faza geçildiğinde alarm tekrar çalabilsin
+      lastTimerPhaseKey = phaseKey;
+      alarmPlayedForPhase = false;
+    }
+  
+    if (
+      (currentRoom.status === "focus" || currentRoom.status === "break") &&
+      secondsLeft === 0 &&
+      !alarmPlayedForPhase
+    ) {
+      playAlarm();
+      alarmPlayedForPhase = true;
+    }
+    // 🔔 --- ALARM BLOĞU SONU ---
+  
     // host için otomatik faz geçişi
     if (isHost && (currentRoom.status === "focus" || currentRoom.status === "break") &&
         currentRoom.phase_ends_at) {
@@ -1837,6 +1936,7 @@
       }
     }
   }
+
 
   // --- Phase transitions (host) ---
   async function startFocusPhase() {
@@ -1867,29 +1967,40 @@
   async function awardFocusIfNeeded() {
     if (!currentRoom || !isHost) return;
     if (currentRoom.focus_awarded) return;
-
+  
+    // ⛔ Focus süresi gerçekten bitmeden rozet verme
+    if (!currentRoom.phase_ends_at) return;
+    const endMs = new Date(currentRoom.phase_ends_at).getTime();
+    const nowMs = Date.now();
+  
+    // Süre dolmadan "End Session" veya "Skip to Break" yapılırsa
+    // awardFocusIfNeeded direkt çıkacak, hiç istatistik yazmayacak.
+    if (nowMs < endMs - PHASE_GRACE_MS) {
+      return;
+    }
+  
     const { data: roomParticipants } = await supabase
       .from("focus_participants")
       .select("*")
       .eq("room_id", currentRoom.id);
-
+  
     if (!roomParticipants || !roomParticipants.length) return;
-
+  
     const uniqueClientIds = [...new Set(roomParticipants.map(p => p.client_id))];
-
+  
     const { data: existingStats } = await supabase
       .from("focus_users")
       .select("*")
       .in("client_id", uniqueClientIds);
-
+  
     const statsMap = new Map();
     if (existingStats) {
       existingStats.forEach(s => statsMap.set(s.client_id, s));
     }
-
+  
     const focusMinutes = currentRoom.focus_minutes || 25;
     const today = new Date().toISOString().slice(0, 10);
-
+  
     const upserts = uniqueClientIds.map(id => {
       const prev = statsMap.get(id) || {
         client_id: id,
@@ -1900,11 +2011,11 @@
         longest_streak_days: 0,
         last_focus_date: null
       };
-
+  
       let streak = prev.streak_days || 0;
       let longest = prev.longest_streak_days || 0;
       const lastDate = prev.last_focus_date;
-
+  
       if (!lastDate) {
         streak = 1;
       } else {
@@ -1914,18 +2025,18 @@
         const lastStr = last.toISOString().slice(0, 10);
         const todayStr = today;
         const yStr = yesterday.toISOString().slice(0, 10);
-
+  
         if (lastStr === todayStr) {
-          // aynı gün; streak değişmeden
+          // aynı gün: streak değişmez
         } else if (lastStr === yStr) {
           streak += 1;
         } else {
           streak = 1;
         }
       }
-
+  
       if (streak > (longest || 0)) longest = streak;
-
+  
       return {
         client_id: id,
         display_name: prev.display_name,
@@ -1936,16 +2047,16 @@
         last_focus_date: today
       };
     });
-
+  
     await supabase.from("focus_users").upsert(upserts, { onConflict: "client_id" });
     await supabase
       .from("focus_rooms")
       .update({ focus_awarded: true })
       .eq("id", currentRoom.id);
-
-    // kendi stats’imizi yeniden çekelim
+  
     await fetchMyStats();
   }
+
 
   async function advancePhase(nextStatus) {
     if (!currentRoom || !isHost) return;
