@@ -417,10 +417,140 @@
       min-width: 54px;
     }
 
+    .identity-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .avatar-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid #334155;
+      background: rgba(15, 23, 42, 0.7);
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    .avatar-chip:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 25px rgba(56, 189, 248, 0.25);
+    }
+
+    .avatar-circle {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .streak-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 12px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: var(--text);
+      font-size: 0.9rem;
+      animation: streakPulse 6s ease-in-out infinite;
+    }
+
+    @keyframes streakPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.25); }
+      50% { box-shadow: 0 0 0 8px rgba(56, 189, 248, 0.05); }
+    }
+
+    .avatar-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(48px, 1fr));
+      gap: 10px;
+      margin: 12px 0;
+    }
+
+    .avatar-option, .color-option {
+      border: 1px solid #334155;
+      background: rgba(15, 23, 42, 0.7);
+      border-radius: 10px;
+      height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+    }
+
+    .avatar-option:hover, .color-option:hover {
+      transform: translateY(-1px);
+      border-color: rgba(56, 189, 248, 0.6);
+      box-shadow: 0 8px 18px rgba(56, 189, 248, 0.2);
+    }
+
+    .avatar-option.selected, .color-option.selected {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.7);
+    }
+
     .lang-btn.active {
       border-color: var(--accent);
       color: var(--accent);
       box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 30;
+      padding: 16px;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal-card {
+      background: #0b1120;
+      border-radius: 16px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+      width: 100%;
+      max-width: 420px;
+      padding: 18px;
+    }
+
+    .modal-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin: 0 0 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-desc {
+      color: var(--text-soft);
+      font-size: 0.95rem;
+      margin-bottom: 10px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 10px;
     }
 
     @keyframes panelGlow {
@@ -435,12 +565,58 @@
   </style>
 </head>
 <body>
-<div class="app">
-  <div class="card-shell">
-    <div class="lang-switch">
-      <button class="lang-btn active" data-lang="tr">🇹🇷 TR</button>
-      <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
-    </div>
+  <div class="app">
+    <div class="card-shell">
+      <div class="identity-bar">
+        <div class="lang-switch">
+          <button class="lang-btn active" data-lang="tr">🇹🇷 TR</button>
+          <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <div class="avatar-chip" id="avatar-chip">
+            <div class="avatar-circle" id="avatar-circle">📚</div>
+            <div style="display:flex; flex-direction:column; line-height:1.2;">
+              <span id="avatar-name-label" style="font-weight:700;">-</span>
+              <span style="font-size:0.8rem; color:var(--text-soft);" id="avatar-edit-label"></span>
+            </div>
+          </div>
+          <div class="streak-pill" id="streak-pill" title="Streak">
+            <span>🔥</span>
+            <span id="streak-current">0</span>
+            <span id="streak-label">günlük seri</span>
+            <span style="color:var(--text-soft); font-size:0.8rem;" id="streak-best"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-overlay" id="name-modal">
+        <div class="modal-card">
+          <div class="modal-title"><span>👋</span><span id="name-modal-title">Hoş geldin</span></div>
+          <div class="modal-desc" id="name-modal-desc">Lütfen görünen adını yaz.</div>
+          <input id="name-modal-input" placeholder="Adın" />
+          <div class="error" id="name-modal-error"></div>
+          <div class="modal-actions">
+            <button id="name-modal-save">
+              <span id="name-modal-save-text">Kaydet</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-overlay" id="avatar-modal">
+        <div class="modal-card">
+          <div class="modal-title"><span>🎨</span><span id="avatar-modal-title">Avatarını seç</span></div>
+          <div class="modal-desc" id="avatar-modal-desc">Emoji ve rengi özelleştir.</div>
+          <div class="section-title" style="margin-top:6px;" id="avatar-emoji-label">Emoji</div>
+          <div class="avatar-grid" id="avatar-emoji-grid"></div>
+          <div class="section-title" style="margin-top:6px;" id="avatar-color-label">Renk</div>
+          <div class="avatar-grid" id="avatar-color-grid"></div>
+          <div class="modal-actions">
+            <button class="secondary" id="avatar-cancel-btn">Kapat</button>
+            <button id="avatar-save-btn"><span id="avatar-save-text">Kaydet</span></button>
+          </div>
+        </div>
+      </div>
 
     <h1>
       <span class="icon">🍅</span>
@@ -632,7 +808,14 @@
 
   const LS_CLIENT_ID = "focus_client_id_v1";
   const LS_STATE = "focus_state_v1";
+  const LS_DISPLAY_NAME = "pomostudy_display_name";
+  const LS_PROFILE_ID = "pomostudy_profile_id";
   const PHASE_GRACE_MS = 2000;
+
+  let profileId = "";
+  let profileData = null;
+  const avatarEmojis = ["📚", "🚀", "🧠", "🌙", "🔥", "💡", "🎧", "🌟", "📝", "🌊"];
+  const avatarColors = ["#38bdf8", "#a855f7", "#22c55e", "#f97316", "#0ea5e9", "#ef4444", "#f59e0b", "#10b981"];
 
   // --- i18n ---
   let currentLang = "tr";
@@ -689,12 +872,24 @@
       reflectionSaved: "Not kaydedildi.",
       reflectionRequired: "Lütfen en az birkaç kelime yaz.",
       streakSuffix: "🔥",
+      streakLabel: "Günlük seri",
+      streakBestLabel: "En iyi",
+      avatarTitle: "Avatarını seç",
+      avatarSubtitle: "Emoji ve rengi özelleştir",
+      avatarSaveButton: "Kaydet",
+      avatarCancelButton: "Kapat",
+      avatarHint: "Avatarını düzenle",
       badgeFirstFocus: "İlk pomodoronu tamamladın",
       badgeHour: "60+ dakika odak",
       badgeFiveSessions: "5+ sprint",
       badgeThreeDayStreak: "3 günlük seri",
       badgeSevenDayStreak: "7 günlük seri",
-      badgeLabel: "Rozetler"
+      badgeLabel: "Rozetler",
+      nameModalTitle: "Hoş geldin!",
+      nameModalDesc: "Uygulamayı kişiselleştirmek için görünen adını gir.",
+      nameModalPlaceholder: "Adın",
+      nameModalSave: "Kaydet",
+      nameModalError: "Lütfen adını yaz."
     },
     en: {
       title: "Shared Pomodoro",
@@ -747,17 +942,85 @@
       reflectionSaved: "Note saved.",
       reflectionRequired: "Please write at least a few words.",
       streakSuffix: "🔥",
+      streakLabel: "Daily streak",
+      streakBestLabel: "Best",
+      avatarTitle: "Choose avatar",
+      avatarSubtitle: "Pick an emoji and color",
+      avatarSaveButton: "Save",
+      avatarCancelButton: "Close",
+      avatarHint: "Edit avatar",
       badgeFirstFocus: "Completed your first Pomodoro",
       badgeHour: "60+ minutes focused",
       badgeFiveSessions: "5+ sprints",
       badgeThreeDayStreak: "3-day streak",
       badgeSevenDayStreak: "7-day streak",
-      badgeLabel: "Badges"
+      badgeLabel: "Badges",
+      nameModalTitle: "Welcome!",
+      nameModalDesc: "Enter the name we should show inside the app.",
+      nameModalPlaceholder: "Your name",
+      nameModalSave: "Save",
+      nameModalError: "Please enter your name."
     }
   };
 
   function t(key) {
     return textMap[currentLang][key] || textMap["tr"][key] || key;
+  }
+
+  function applyDisplayNameToInputs(name) {
+    if (!name) return;
+    if (!creatorNameInput.value) creatorNameInput.value = name;
+    if (!joinNameInput.value) joinNameInput.value = name;
+  }
+
+  let pendingNameResolve = null;
+
+  function openNameModal() {
+    nameModal.classList.add("active");
+    nameModalError.textContent = "";
+    nameModalInput.value = creatorNameInput.value || joinNameInput.value || "";
+    setTimeout(() => nameModalInput.focus(), 50);
+  }
+
+  function closeNameModal() {
+    nameModal.classList.remove("active");
+  }
+
+  function handleNameSave() {
+    const value = nameModalInput.value.trim();
+    if (!value) {
+      nameModalError.textContent = t("nameModalError");
+      return;
+    }
+    nameModalError.textContent = "";
+    localStorage.setItem(LS_DISPLAY_NAME, value);
+    localStorage.removeItem(LS_PROFILE_ID);
+    profileId = "";
+    applyDisplayNameToInputs(value);
+    closeNameModal();
+    if (pendingNameResolve) {
+      pendingNameResolve(value);
+      pendingNameResolve = null;
+    }
+  }
+
+  nameModalSave.addEventListener("click", handleNameSave);
+  nameModalInput.addEventListener("keydown", ev => {
+    if (ev.key === "Enter") {
+      handleNameSave();
+    }
+  });
+
+  async function ensureDisplayName() {
+    const stored = localStorage.getItem(LS_DISPLAY_NAME);
+    if (stored) {
+      applyDisplayNameToInputs(stored);
+      return stored;
+    }
+    openNameModal();
+    return new Promise(resolve => {
+      pendingNameResolve = resolve;
+    });
   }
 
   // --- Dom refs ---
@@ -777,6 +1040,14 @@
   const btnCreateText = document.getElementById("btn-create-text");
   const btnJoinText = document.getElementById("btn-join-text");
   const joinHelpText = document.getElementById("join-help-text");
+
+  const nameModal = document.getElementById("name-modal");
+  const nameModalTitle = document.getElementById("name-modal-title");
+  const nameModalDesc = document.getElementById("name-modal-desc");
+  const nameModalInput = document.getElementById("name-modal-input");
+  const nameModalSave = document.getElementById("name-modal-save");
+  const nameModalSaveText = document.getElementById("name-modal-save-text");
+  const nameModalError = document.getElementById("name-modal-error");
 
   const roomSectionTitle = document.getElementById("room-section-title");
   const roomStatusText = document.getElementById("room-status-text");
@@ -818,6 +1089,26 @@
 
   const createErrorEl = document.getElementById("create-error");
   const joinErrorEl = document.getElementById("join-error");
+
+  const avatarChip = document.getElementById("avatar-chip");
+  const avatarCircle = document.getElementById("avatar-circle");
+  const avatarNameLabel = document.getElementById("avatar-name-label");
+  const avatarEditLabel = document.getElementById("avatar-edit-label");
+  const avatarModal = document.getElementById("avatar-modal");
+  const avatarEmojiGrid = document.getElementById("avatar-emoji-grid");
+  const avatarColorGrid = document.getElementById("avatar-color-grid");
+  const avatarSaveBtn = document.getElementById("avatar-save-btn");
+  const avatarCancelBtn = document.getElementById("avatar-cancel-btn");
+  const avatarModalTitle = document.getElementById("avatar-modal-title");
+  const avatarModalDesc = document.getElementById("avatar-modal-desc");
+  const avatarEmojiLabel = document.getElementById("avatar-emoji-label");
+  const avatarColorLabel = document.getElementById("avatar-color-label");
+  const avatarSaveText = document.getElementById("avatar-save-text");
+
+  const streakPill = document.getElementById("streak-pill");
+  const streakCurrent = document.getElementById("streak-current");
+  const streakLabel = document.getElementById("streak-label");
+  const streakBest = document.getElementById("streak-best");
 
   // Inputs
   const creatorNameInput = document.getElementById("creator-name");
@@ -929,9 +1220,155 @@
     labelEnergy.textContent = t("labelEnergy");
     btnSaveReflectionText.textContent = t("btnSaveReflection");
     reflectionListTitle.textContent = t("reflectionListTitle");
+    nameModalTitle.textContent = t("nameModalTitle");
+    nameModalDesc.textContent = t("nameModalDesc");
+    nameModalInput.placeholder = t("nameModalPlaceholder");
+    nameModalSaveText.textContent = t("nameModalSave");
+
+    avatarModalTitle.textContent = t("avatarTitle");
+    avatarModalDesc.textContent = t("avatarSubtitle");
+    avatarEmojiLabel.textContent = t("avatarTitle");
+    avatarColorLabel.textContent = t("avatarSubtitle");
+    avatarSaveText.textContent = t("avatarSaveButton");
+    avatarCancelBtn.textContent = t("avatarCancelButton");
+    avatarEditLabel.textContent = t("avatarHint");
+    streakLabel.textContent = t("streakLabel");
+    streakBest.textContent = `${t("streakBestLabel")}: 0`;
 
     updateRoomUI();
     renderStats();
+    renderAvatar();
+  }
+
+  function getDisplayName() {
+    return localStorage.getItem(LS_DISPLAY_NAME) || "";
+  }
+
+  async function ensureProfileRow(name) {
+    if (!name) return null;
+    const storedProfile = localStorage.getItem(LS_PROFILE_ID);
+    if (storedProfile) {
+      profileId = storedProfile;
+      return storedProfile;
+    }
+    try {
+      const { data: existing, error } = await supabase
+        .from("study_profiles")
+        .select("id, avatar_emoji, avatar_color, streak_days, best_streak")
+        .eq("display_name", name)
+        .maybeSingle();
+      if (error) {
+        console.warn("profile fetch error", error.message);
+      }
+      if (existing && existing.id) {
+        profileId = existing.id;
+        localStorage.setItem(LS_PROFILE_ID, existing.id);
+        profileData = existing;
+        return existing.id;
+      }
+    } catch (err) {
+      console.warn("profile fetch exception", err);
+    }
+    try {
+      const { data: inserted, error: insertError } = await supabase
+        .from("study_profiles")
+        .insert({ display_name: name })
+        .select("id, avatar_emoji, avatar_color, streak_days, best_streak")
+        .single();
+      if (insertError) {
+        console.warn("profile insert error", insertError.message);
+        return null;
+      }
+      if (inserted && inserted.id) {
+        profileId = inserted.id;
+        localStorage.setItem(LS_PROFILE_ID, inserted.id);
+        profileData = inserted;
+        return inserted.id;
+      }
+    } catch (err) {
+      console.warn("profile insert exception", err);
+    }
+    return null;
+  }
+
+  async function loadProfileData() {
+    if (!profileId) return;
+    const { data, error } = await supabase
+      .from("study_profiles")
+      .select("id, avatar_emoji, avatar_color, streak_days, best_streak")
+      .eq("id", profileId)
+      .maybeSingle();
+    if (!error && data) {
+      profileData = data;
+    }
+    renderAvatar();
+  }
+
+  function renderAvatar() {
+    const name = getDisplayName();
+    avatarNameLabel.textContent = name || "-";
+    const emoji = (profileData && profileData.avatar_emoji) || "📚";
+    const color = (profileData && profileData.avatar_color) || "#38bdf8";
+    avatarCircle.textContent = emoji;
+    avatarCircle.style.background = color;
+    streakCurrent.textContent = profileData?.streak_days ?? 0;
+    streakBest.textContent = `${t("streakBestLabel")}: ${profileData?.best_streak ?? 0}`;
+  }
+
+  function openAvatarModal() {
+    avatarModal.classList.add("active");
+    avatarEmojiGrid.innerHTML = "";
+    avatarColorGrid.innerHTML = "";
+    const currentEmoji = (profileData && profileData.avatar_emoji) || "📚";
+    const currentColor = (profileData && profileData.avatar_color) || "#38bdf8";
+    avatarEmojis.forEach(emo => {
+      const btn = document.createElement("div");
+      btn.className = "avatar-option" + (emo === currentEmoji ? " selected" : "");
+      btn.textContent = emo;
+      btn.onclick = () => {
+        avatarEmojiGrid.querySelectorAll(".avatar-option").forEach(el => el.classList.remove("selected"));
+        btn.classList.add("selected");
+      };
+      avatarEmojiGrid.appendChild(btn);
+    });
+    avatarColors.forEach(color => {
+      const btn = document.createElement("div");
+      btn.className = "color-option" + (color === currentColor ? " selected" : "");
+      btn.style.background = color;
+      btn.onclick = () => {
+        avatarColorGrid.querySelectorAll(".color-option").forEach(el => el.classList.remove("selected"));
+        btn.classList.add("selected");
+      };
+      avatarColorGrid.appendChild(btn);
+    });
+  }
+
+  function closeAvatarModal() {
+    avatarModal.classList.remove("active");
+  }
+
+  async function saveAvatarSelection() {
+    const selectedEmoji = avatarEmojiGrid.querySelector(".avatar-option.selected")?.textContent || "📚";
+    const selectedColor = avatarColorGrid.querySelector(".color-option.selected")?.style.background || "#38bdf8";
+    const name = getDisplayName();
+    if (!profileId) {
+      await ensureProfileRow(name);
+    }
+    if (!profileId) {
+      closeAvatarModal();
+      return;
+    }
+    const { data, error } = await supabase
+      .from("study_profiles")
+      .update({ avatar_emoji: selectedEmoji, avatar_color: selectedColor })
+      .eq("id", profileId)
+      .select("id, avatar_emoji, avatar_color, streak_days, best_streak")
+      .maybeSingle();
+    if (!error && data) {
+      profileData = data;
+      renderAvatar();
+    }
+    closeAvatarModal();
   }
 
   // --- Supabase helpers ---
@@ -1608,6 +2045,13 @@
     loadReflections();
   }
 
+  async function bootstrapIdentity() {
+    const name = await ensureDisplayName();
+    await ensureProfileRow(name);
+    await loadProfileData();
+    renderAvatar();
+  }
+
   function attachRealtime(roomId) {
     supabase
       .channel("focus-room-" + roomId)
@@ -1679,6 +2123,10 @@
   joinRoomBtn.addEventListener("click", joinRoom);
   saveReflectionBtn.addEventListener("click", saveReflection);
 
+  avatarChip.addEventListener("click", openAvatarModal);
+  avatarCancelBtn.addEventListener("click", closeAvatarModal);
+  avatarSaveBtn.addEventListener("click", saveAvatarSelection);
+
   // Lang switch
   document.querySelectorAll(".lang-btn").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -1693,9 +2141,14 @@
   });
 
   // --- init ---
-  ensureClientId();
-  applyLanguage();
-  autoRejoin();
+  async function init() {
+    ensureClientId();
+    applyLanguage();
+    await bootstrapIdentity();
+    autoRejoin();
+  }
+
+  init();
 </script>
 </body>
 </html>
